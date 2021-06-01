@@ -33,16 +33,23 @@ class Psikit(object):
 
     def clean(self):
         rmtree(self.tempdir)
-    
+
     def read_from_smiles(self, smiles_str, opt=True):
         self.mol = Chem.MolFromSmiles(smiles_str)
         if opt:
-            self.rdkit_optimize()   
+            self.rdkit_optimize()
 
     def read_from_molfile(self, molfile, opt=True, removeHs=False):
         self.mol = Chem.MolFromMolFile(molfile, removeHs=removeHs)
         if opt:
-            self.rdkit_optimize()   
+            self.rdkit_optimize()
+
+    def read_from_sdffile(self, sdffile, opt=True, removeHs=False):
+        orimol = Chem.SDMolSupplier(sdffile, removeHs=removeHs, sanitize=True)
+        for mol in orimol:
+            self.mol = Chem.MolFromMolFile(mol, removeHs=removeHs)
+            if opt:
+                self.rdkit_optimize()
 
     def rdkit_optimize(self, addHs=True):
         if addHs:
@@ -86,7 +93,7 @@ class Psikit(object):
         """
         http://www.psicode.org/psi4manual/1.2/psiapi.html
         IV. Analysis of Intermolecular Interactions
-        and 
+        and
         http://forum.psicode.org/t/how-can-i-change-max-iteration-in-energy-method/1238/2
         """
         self.psi4.set_options(kwargs)
@@ -104,7 +111,7 @@ class Psikit(object):
             conf.SetAtomPosition(i, tuple(mol_array[i]))
         return nmol
 
-    
+
     def clone_mol(self):
         return Chem.Mol(self.mol)
 
@@ -121,7 +128,7 @@ class Psikit(object):
                                    })
             Chem.MolToMolFile(self.mol, os.path.join(self.tempdir, 'target.mol'))
             self.psi4.cubeprop(self.wfn)
-    
+
     getMOview = moves.moved_function(create_cube_files, 'getMOview', __name__)
 
     def view_on_pymol(self, target='FRONTIER', maprange=0.05, gridspace=0.3):
@@ -130,7 +137,7 @@ class Psikit(object):
 
     def save_frontier(self, gridspace=0.3, isotype="isosurface"):
         self.create_cube_files(gridspace=gridspace)
-        save_pyscript(self.tempdir, isotype=isotype)  
+        save_pyscript(self.tempdir, isotype=isotype)
 
     def save_fchk(self, filename="output.fchk"):
         fchk_writer = self.psi4.core.FCHKWriter(self.wfn)
